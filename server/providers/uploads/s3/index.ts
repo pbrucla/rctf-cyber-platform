@@ -63,7 +63,6 @@ export default class AwsProvider implements Provider {
     const key = `uploads/${hash}/${name}`
     const file = await this.getAwsFile(hash, name)
     if (file === null) {
-      // TODO: upload file to aws s3
       const putObjectCommand = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
