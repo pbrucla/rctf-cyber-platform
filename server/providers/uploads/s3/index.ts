@@ -1,4 +1,4 @@
-import { S3Client, NotFound, PutObjectCommand, GetObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
+import { S3Client, NoSuchKey, PutObjectCommand, GetObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import crypto from 'crypto'
 import { Readable } from 'stream';
 import { Provider } from '../../../uploads/provider'
@@ -6,7 +6,7 @@ import { Provider } from '../../../uploads/provider'
 interface AwsProviderOptions {
   credentials: {
     accessKeyId: string,
-    secretAccesskey: string
+    secretAccessKey: string
   }
   bucketName: string;
   region: string;
@@ -21,7 +21,7 @@ export default class AwsProvider implements Provider {
     const options: Required<AwsProviderOptions> = {
       credentials: {
         accessKeyId: _options.credentials.accessKeyId || process.env.RCTF_AWS_ACCESS_KEY_ID as string,
-        secretAccesskey: _options.credentials.secretAccesskey || process.env.RCTF_AWS_SECRET_ACCESS_KEY as string
+        secretAccessKey: _options.credentials.secretAccessKey || process.env.RCTF_AWS_SECRET_ACCESS_KEY as string
       },
       bucketName: _options.bucketName || process.env.RCTF_AWS_BUCKET as string,
       region: _options.region || process.env.RCTF_AWS_REGION as string
@@ -32,7 +32,7 @@ export default class AwsProvider implements Provider {
       region: options.region,
       credentials: {
         accessKeyId: options.credentials.accessKeyId,
-        secretAccessKey: options.credentials.secretAccesskey
+        secretAccessKey: options.credentials.secretAccessKey
       }
     })
 
@@ -50,10 +50,10 @@ export default class AwsProvider implements Provider {
       const fileRes = await this.client.send(getObjectCommand)
       return fileRes.Body as Readable
     } catch (error) {
-      if (error instanceof NotFound) {
+      if (error instanceof NoSuchKey) {
         return null
       } else {
-        throw new Error('Unknown AWS error occurred')
+        throw new Error(`Unknown AWS error occurred: ${(error as Error).toString()})`)
       }
     }
   }
