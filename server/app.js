@@ -46,7 +46,8 @@ app.register(helmet, {
       connectSrc: ['\'self\'', 'https://www.google-analytics.com'],
       imgSrc: ['*', 'data:']
     }
-  }
+  },
+  crossOriginEmbedderPolicy: false
 })
 
 uploadProviderInit(app)
