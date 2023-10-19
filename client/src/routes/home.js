@@ -12,6 +12,9 @@ export default withStyles({
     },
     '& h1, & h2, & h3': {
       margin: '32px 0 16px 0'
+    },
+    '& p': {
+      textAlign: 'justify'
     }
   }
 }, class Home extends Component {
