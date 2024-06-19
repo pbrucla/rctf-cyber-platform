@@ -24,6 +24,7 @@ export interface Challenge {
   name: string;
   description: string;
   category: string;
+  tags: string[];
   author: string;
   files: File[];
   points: Points;
