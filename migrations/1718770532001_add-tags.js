@@ -1,6 +1,7 @@
 exports.up = (pgm) => {
   pgm.createTable('tags', {
     name: { type: 'string', notNull: true },
+    metatag: { type: 'string' },
     challid: { type: 'string', notNull: true }
   })
 
@@ -19,5 +20,6 @@ exports.up = (pgm) => {
 
 exports.down = (pgm) => {
   pgm.dropConstraint('tags', 'tag_challid_fkey')
+  pgm.dropConstraint('tags', 'tag_pkey')
   pgm.dropTable('tags')
 }

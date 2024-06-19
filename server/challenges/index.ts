@@ -14,7 +14,7 @@ let challengesMap = new Map<string, Challenge>()
 let cleanedChallengesMap = new Map<string, CleanedChallenge>()
 
 const cleanChallenge = (chall: Challenge): CleanedChallenge => {
-  const { files, description, author, points, id, name, category, sortWeight } = chall
+  const { files, description, author, points, id, name, category, tags, sortWeight } = chall
 
   return {
     files,
@@ -24,6 +24,7 @@ const cleanChallenge = (chall: Challenge): CleanedChallenge => {
     id,
     name,
     category,
+    tags,
     sortWeight
   }
 }
@@ -43,7 +44,7 @@ void import(path.join('../providers', config.challengeProvider.name))
   })
 
 // FIXME: remove cast once cache is typed
-;(challUpdateEmitter as EventEmitter).on('update', () => {
+;(challUpdateEmitter).on('update', () => {
   provider.forceUpdate()
 })
 

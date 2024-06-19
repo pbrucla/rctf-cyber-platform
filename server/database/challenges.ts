@@ -16,7 +16,8 @@ export const getAllChallenges = async (): Promise<DatabaseChallenge[]> => {
 }
 
 export const getChallengeById = async ({ id }: Pick<DatabaseChallenge, 'id'>): Promise<DatabaseChallenge | undefined> => {
-  const chall = (await db.query<DatabaseChallenge>('SELECT * FROM challenges WHERE id = $1', [id])).rows[0]
+  const chall = (await db.query('SELECT * FROM challenges WHERE id = $1', [id])).rows[0] as DatabaseChallenge | undefined
+  if (chall === undefined) return undefined
   chall.data.tags = await getAllTagsByChallenge({ challid: id })
   return chall
 }
