@@ -20,6 +20,7 @@ const Challenges = ({ classes }) => {
   const challPageState = useMemo(() => JSON.parse(localStorage.getItem('challPageState') || '{}'), [])
   const [problems, setProblems] = useState(null)
   const [categories, setCategories] = useState(challPageState.categories || {})
+  const [tags, setTags] = useState(challPageState.tags || {}) // {"difficulty": {"hard": true, "easy": false}, "event": {"lactf": true}}
   const [showSolved, setShowSolved] = useState(challPageState.showSolved || false)
   const [solveIDs, setSolveIDs] = useState([])
   const [loadState, setLoadState] = useState(loadStates.pending)
@@ -44,6 +45,13 @@ const Challenges = ({ classes }) => {
       [e.target.dataset.category]: e.target.checked
     }))
   }, [])
+
+  const handleTagsCheckedChange = useCallback(e => {
+    const newTags = JSON.parse(JSON.stringify(tags))
+    newTags[e.target.dataset.metatag][e.target.dataset.tag] = e.target.checked
+    setTags(newTags)
+    console.log(newTags)
+  }, [tags])
 
   useEffect(() => {
     document.title = `Challenges | ${config.ctfName}`
@@ -91,6 +99,7 @@ const Challenges = ({ classes }) => {
 
       setProblems(data)
       setCategories(newCategories)
+      setTags({ difficulty: { hard: true, easy: false }, event: { lactf: true } })
     }
     action()
   }, [toast, categories, problems])
@@ -109,8 +118,8 @@ const Challenges = ({ classes }) => {
   // }, [toast])
 
   useEffect(() => {
-    localStorage.challPageState = JSON.stringify({ categories, showSolved })
-  }, [categories, showSolved])
+    localStorage.challPageState = JSON.stringify({ categories, showSolved, tags })
+  }, [categories, showSolved, tags])
 
   const problemsToDisplay = useMemo(() => {
     if (problems === null) {
@@ -208,6 +217,25 @@ const Challenges = ({ classes }) => {
                     <label for={`category-${category}`} class='form-ext-label'>{category} ({solved}/{total} solved)</label>
                   </div>
                 )
+              })
+            }
+          </div>
+        </div>
+        <div class={`frame ${classes.frame}`}>
+          <div class='frame__body'>
+            <div class='frame__title title'>Tags</div>
+            {
+              Object.keys(tags).map((metatag) => {
+                return (<div><h5 class='frame__title title'>{metatag}</h5>
+                  {Object.entries(tags[metatag]).map(([tag, checked]) => {
+                    return (
+                      <div key={tag} class='form-ext-control form-ext-checkbox'>
+                        <input id={`tag-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
+                        <label for={`tag-${tag}`} class='form-ext-label'>{tag}</label>
+                      </div>
+                    )
+                  })}
+                </div>)
               })
             }
           </div>
