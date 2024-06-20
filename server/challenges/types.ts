@@ -36,5 +36,5 @@ export interface Challenge {
 
 export interface Tag {
   name: string;
-  group: string;
+  metatag: string;
 }

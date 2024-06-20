@@ -1,6 +1,6 @@
 import db from './db'
-import { Challenge } from '../challenges/types'
-import { getAllTagsByChallenge } from './tags'
+import { Challenge, Tag } from '../challenges/types'
+import { getAllTagsByChallenge, setTag, removeTagsByChall, removeTagByName } from './tags'
 
 export interface DatabaseChallenge {
   id: string;
@@ -22,11 +22,14 @@ export const getChallengeById = async ({ id }: Pick<DatabaseChallenge, 'id'>): P
   return chall
 }
 
-export const createChallenge = ({ id, data }: DatabaseChallenge): Promise<DatabaseChallenge> => {
-  return db.query<DatabaseChallenge>('INSERT INTO challenges ($1, $2) RETURNING *',
+export const createChallenge = async ({ id, data }: DatabaseChallenge): Promise<DatabaseChallenge> => {
+  const ret = await db.query<DatabaseChallenge>('INSERT INTO challenges ($1, $2) RETURNING *',
     [id, data]
   )
-    .then(res => res.rows[0])
+  for await (const tag of data.tags) {
+    await setTag({ ...tag, challid: id })
+  }
+  return ret.rows[0]
 }
 
 export const removeChallengeById = ({ id }: Pick<DatabaseChallenge, 'id'>): Promise<DatabaseChallenge | undefined> => {
@@ -42,4 +45,19 @@ export const upsertChallenge = async ({ id, data }: DatabaseChallenge): Promise<
     `,
   [id, data]
   )
+  if (data.tags instanceof Array) {
+    const existingTags = await getAllTagsByChallenge({ challid: id })
+    for (const existingTag of existingTags) {
+      if (Array.isArray(data.tags)) {
+        // At this point, data.tags should be an array of Tags, and if not, user error
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        if (!data.tags.some((t) => { return t.name === existingTag.name && t.metatag === existingTag.metatag })) {
+          await removeTagByName({ ...existingTag, challid: id })
+        }
+      }
+    }
+    for await (const tag of data.tags) {
+      await setTag({ ...tag, challid: id })
+    }
+  }
 }

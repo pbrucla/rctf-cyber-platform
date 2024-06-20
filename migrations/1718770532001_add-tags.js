@@ -1,7 +1,7 @@
 exports.up = (pgm) => {
   pgm.createTable('tags', {
     name: { type: 'string', notNull: true },
-    metatag: { type: 'string' },
+    metatag: { type: 'string', notNull: true },
     challid: { type: 'string', notNull: true }
   })
 
@@ -14,7 +14,7 @@ exports.up = (pgm) => {
     }
   })
   pgm.addConstraint('tags', 'tag_pkey', {
-    primaryKey: ['challid', 'name']
+    primaryKey: ['challid', 'name', 'metatag']
   })
 }
 
