@@ -81,11 +81,11 @@ const Problem = ({ classes, problem, solved, setSolved }) => {
   const onSolvesClose = useCallback(() => setSolves(null), [])
 
   return (
-    <div class={`frame ${classes.frame}`}>
+    <div class={`frame ${classes.frame}`} id={problem.id}>
       <div class='frame__body'>
         <div class='row u-no-padding'>
           <div class='col-6 u-no-padding'>
-            <div class='frame__title title'>{problem.category}/{problem.name}</div>
+            <a href={`#${problem.id}`}><div class='frame__title title'>{problem.category}/{problem.name}</div></a>
             <div class='frame__subtitle u-no-margin'>{problem.author}</div>
           </div>
           <div class='col-6 u-no-padding u-text-right'>
