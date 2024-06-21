@@ -7,7 +7,7 @@ rCTF is redpwnCTF's CTF platform, slightly adapted for use by ACM Cyber. It is d
 
 ## Changes from upstream rctf
 - `instancerUrl` config option: set the url to the [challenge instancer](https://github.com/pbrucla/cyber-instancer). Note that the instancer must share the same login secret as rctf for this to work
-- Challenges can use a `{instancer:chall-id}` placeholder format to be replaced with the instancer url from the rctf config and the instancer login token. You can then link to the instancer by doing `[click me]({instancer:simple-redis-chall})` for example.
+- Challenges can either use a `{instancer:chall-id}` placeholder format to be replaced with the instancer url from the rctf config and the instancer login token, or use just `{{instancer}}` which will use the same challenge id on the platform for the instancer.
     - `{instancer_url}` and/or `{instancer_token}` placeholders are also supported if you want to manually construct a link for whatever reason
 
 ## Getting Started
