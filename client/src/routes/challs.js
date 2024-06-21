@@ -88,6 +88,18 @@ const Challenges = ({ classes }) => {
         }
       })
 
+      const newTags = { ...tags }
+      data.forEach(problem => {
+        for (const tag of problem.tags) {
+          if (newTags[tag.metatag] === undefined) {
+            newTags[tag.metatag] = {}
+          }
+          if (newTags[tag.metatag][tag.name] === undefined) {
+            newTags[tag.metatag][tag.name] = false
+          }
+        }
+      })
+
       const instancerPlaceholderRegex = new RegExp(/{instancer:([a-zA-Z0-9-]+)}/g)
       if (config.instancerUrl !== '') {
         data.forEach(problem => {
@@ -99,10 +111,11 @@ const Challenges = ({ classes }) => {
 
       setProblems(data)
       setCategories(newCategories)
-      setTags({ difficulty: { hard: true, easy: false }, event: { lactf: true } })
+
+      setTags(newTags)
     }
     action()
-  }, [toast, categories, problems])
+  }, [toast, categories, tags, problems])
 
   // useEffect(() => {
   //   const action = async () => {
@@ -141,6 +154,22 @@ const Challenges = ({ classes }) => {
         }
       })
     }
+    for (const metatag in tags) {
+      let filterMetatag = false
+      for (const selected of Object.values(tags[metatag])) {
+        if (selected) {
+          filterMetatag = true
+          break
+        }
+      }
+      if (filterMetatag) {
+        const expectedTags = Object.keys(tags[metatag]).filter((tag) => tags[metatag][tag])
+        filtered = filtered.filter((problem) => {
+          const problemTags = problem.tags
+          return problemTags.some((tag) => tag.metatag === metatag && expectedTags.includes(tag.name))
+        })
+      }
+    }
 
     filtered.sort((a, b) => {
       if (a.points === b.points) {
@@ -156,7 +185,7 @@ const Challenges = ({ classes }) => {
     })
 
     return filtered
-  }, [problems, categories, showSolved, solveIDs])
+  }, [problems, categories, showSolved, solveIDs, tags])
 
   const { categoryCounts, solvedCount } = useMemo(() => {
     const categoryCounts = new Map()

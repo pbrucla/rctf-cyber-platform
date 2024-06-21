@@ -87,6 +87,7 @@ const Problem = ({ classes, problem, solved, setSolved }) => {
           <div class='col-6 u-no-padding'>
             <a href={`#${problem.id}`}><div class='frame__title title'>{problem.category}/{problem.name}</div></a>
             <div class='frame__subtitle u-no-margin'>{problem.author}</div>
+            <div class='frame__subtitle u-no-margin'>{`Tags:${problem.tags.sort((a, b) => a.metatag > b.metatag).map(tag => { return ` ${tag.name}` })}`}</div>
           </div>
           <div class='col-6 u-no-padding u-text-right'>
             <a
