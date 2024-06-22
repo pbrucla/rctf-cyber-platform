@@ -254,9 +254,9 @@ const Challenges = ({ classes }) => {
           <div class='frame__body'>
             <div class='frame__title title'>Tags</div>
             {
-              Object.keys(tags).map((metatag) => {
+              Object.keys(tags).sort((a, b) => a.localeCompare(b)).map((metatag) => {
                 return (<div><h5 class='frame__title title'>{metatag}</h5>
-                  {Object.entries(tags[metatag]).map(([tag, checked]) => {
+                  {Object.entries(tags[metatag]).sort((a, b) => a[0].localeCompare(b[0])).map(([tag, checked]) => {
                     return (
                       <div key={tag} class='form-ext-control form-ext-checkbox'>
                         <input id={`tag-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
