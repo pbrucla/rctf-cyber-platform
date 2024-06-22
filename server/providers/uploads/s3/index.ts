@@ -1,7 +1,9 @@
-import { S3Client, NoSuchKey, PutObjectCommand, GetObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
+import { S3Client, NoSuchKey, PutObjectCommand, GetObjectCommand, ObjectCannedACL, HeadObjectCommand, NotFound } from '@aws-sdk/client-s3'
 import crypto from 'crypto'
-import { Readable } from 'stream';
+import { Readable } from 'stream'
 import { Provider } from '../../../uploads/provider'
+import { NodeHttpHandler } from '@smithy/node-http-handler'
+import { Agent } from 'node:https'
 
 interface AwsProviderOptions {
   credentials: {
@@ -33,7 +35,20 @@ export default class AwsProvider implements Provider {
       credentials: {
         accessKeyId: options.credentials.accessKeyId,
         secretAccessKey: options.credentials.secretAccessKey
-      }
+      },
+      requestHandler: new NodeHttpHandler({
+        httpsAgent: new Agent({
+          maxSockets: 500,
+
+          // keepAlive is a default from AWS SDK. We want to preserve this for
+          // performance reasons.
+          keepAlive: true,
+          keepAliveMsecs: 1000,
+          timeout: 5000
+        }),
+        connectionTimeout: 1000,
+        requestTimeout: 5000
+      })
     })
 
     this.bucketName = options.bucketName
@@ -58,11 +73,29 @@ export default class AwsProvider implements Provider {
     }
   }
 
+  private CheckAwsFile = async (sha256: string, name: string): Promise<boolean> => {
+    const key = `uploads/${sha256}/${name}`
+    const headObjectCommand = new HeadObjectCommand({
+      Bucket: this.bucketName,
+      Key: key
+    })
+    try {
+      await this.client.send(headObjectCommand)
+      return true
+    } catch (error) {
+      if (error instanceof NotFound) {
+        return false
+      } else {
+        throw error
+      }
+    }
+  }
+
   upload = async (data: Buffer, name: string): Promise<string> => {
     const hash = crypto.createHash('sha256').update(data).digest('hex')
     const key = `uploads/${hash}/${name}`
-    const file = await this.getAwsFile(hash, name)
-    if (file === null) {
+    const fileExists = await this.CheckAwsFile(hash, name)
+    if (!fileExists) {
       const putObjectCommand = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
