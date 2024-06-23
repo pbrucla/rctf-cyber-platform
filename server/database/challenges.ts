@@ -26,7 +26,7 @@ export const createChallenge = async ({ id, data }: DatabaseChallenge): Promise<
   const ret = await db.query<DatabaseChallenge>('INSERT INTO challenges ($1, $2) RETURNING *',
     [id, data]
   )
-  for await (const tag of data.tags) {
+  for (const tag of data.tags) {
     await setTag({ ...tag, challid: id })
   }
   return ret.rows[0]
@@ -38,26 +38,33 @@ export const removeChallengeById = ({ id }: Pick<DatabaseChallenge, 'id'>): Prom
 }
 
 export const upsertChallenge = async ({ id, data }: DatabaseChallenge): Promise<void> => {
-  await db.query(`
-    INSERT INTO challenges VALUES($1, $2)
-      ON CONFLICT (id)
-      DO UPDATE SET data = $2
-    `,
-  [id, data]
-  )
-  if (data.tags instanceof Array) {
-    const existingTags = await getAllTagsByChallenge({ challid: id })
-    for (const existingTag of existingTags) {
-      if (Array.isArray(data.tags)) {
-        // At this point, data.tags should be an array of Tags, and if not, user error
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
+    await db.query(`
+      INSERT INTO challenges VALUES($1, $2)
+        ON CONFLICT (id)
+        DO UPDATE SET data = $2
+      `,
+    [id, data]
+    )
+    if (data.tags instanceof Array) {
+      const existingTags = await getAllTagsByChallenge({ challid: id }, client)
+      for (const existingTag of existingTags) {
+        // At this point, data.tags should be an array of Tags
         if (!data.tags.some((t) => { return t.name === existingTag.name && t.metatag === existingTag.metatag })) {
-          await removeTagByName({ ...existingTag, challid: id })
+          await removeTagByName({ ...existingTag, challid: id }, client)
         }
       }
+      for (const tag of data.tags) {
+        await setTag({ ...tag, challid: id }, client)
+      }
     }
-    for await (const tag of data.tags) {
-      await setTag({ ...tag, challid: id })
-    }
+    await client.query('COMMIT')
+  } catch (e) {
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    client.release()
   }
 }

@@ -43,8 +43,7 @@ void import(path.join('../providers', config.challengeProvider.name))
     provider.on('update', onUpdate)
   })
 
-// FIXME: remove cast once cache is typed
-;(challUpdateEmitter).on('update', () => {
+challUpdateEmitter.on('update', () => {
   provider.forceUpdate()
 })
 

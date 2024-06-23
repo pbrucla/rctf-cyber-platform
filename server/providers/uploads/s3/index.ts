@@ -39,15 +39,12 @@ export default class AwsProvider implements Provider {
       requestHandler: new NodeHttpHandler({
         httpsAgent: new Agent({
           maxSockets: 500,
-
-          // keepAlive is a default from AWS SDK. We want to preserve this for
-          // performance reasons.
           keepAlive: true,
           keepAliveMsecs: 1000,
-          timeout: 5000
+          timeout: 120000
         }),
-        connectionTimeout: 1000,
-        requestTimeout: 5000
+        connectionTimeout: 5000,
+        requestTimeout: 120000
       })
     })
 

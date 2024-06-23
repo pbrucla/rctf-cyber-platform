@@ -16,11 +16,32 @@ const loadStates = {
   loaded: 2
 }
 
+const serializeTags = (tags) => {
+  if (tags === undefined) return
+  const tagObj = {}
+  Array.from(tags).forEach(([metatag, tag]) => {
+    tagObj[metatag] = {}
+    Array.from(tag).forEach(([tagName, isSelected]) => {
+      tagObj[metatag][tagName] = isSelected
+    })
+  })
+  return tagObj
+}
+
+const deserializeTags = (tags) => {
+  if (tags === undefined) return
+  const outerMap = new Map()
+  Object.entries(tags).forEach(([metatag, tag]) => {
+    outerMap.set(metatag, new Map(Object.entries(tag)))
+  })
+  return outerMap
+}
+
 const Challenges = ({ classes }) => {
   const challPageState = useMemo(() => JSON.parse(localStorage.getItem('challPageState') || '{}'), [])
   const [problems, setProblems] = useState(null)
   const [categories, setCategories] = useState(challPageState.categories || {})
-  const [tags, setTags] = useState(challPageState.tags || {}) // {"difficulty": {"hard": true, "easy": false}, "event": {"lactf": true}}
+  const [tags, setTags] = useState(deserializeTags(challPageState.tags) || new Map())
   const [showSolved, setShowSolved] = useState(challPageState.showSolved || false)
   const [solveIDs, setSolveIDs] = useState([])
   const [loadState, setLoadState] = useState(loadStates.pending)
@@ -47,11 +68,12 @@ const Challenges = ({ classes }) => {
   }, [])
 
   const handleTagsCheckedChange = useCallback(e => {
-    const newTags = JSON.parse(JSON.stringify(tags))
-    newTags[e.target.dataset.metatag][e.target.dataset.tag] = e.target.checked
-    setTags(newTags)
-    console.log(newTags)
-  }, [tags])
+    setTags(oldTags => {
+      const newTags = new Map(oldTags)
+      newTags.get(e.target.dataset.metatag).set(e.target.dataset.tag, e.target.checked)
+      return newTags
+    })
+  }, [])
 
   useEffect(() => {
     document.title = `Challenges | ${config.ctfName}`
@@ -82,20 +104,21 @@ const Challenges = ({ classes }) => {
       }
 
       const newCategories = { ...categories }
+
       data.forEach(problem => {
         if (newCategories[problem.category] === undefined) {
           newCategories[problem.category] = false
         }
       })
-
-      const newTags = { ...tags }
+      const newTags = new Map(tags)
       data.forEach(problem => {
         for (const tag of problem.tags) {
-          if (newTags[tag.metatag] === undefined) {
-            newTags[tag.metatag] = {}
+          if (!newTags.has(tag.metatag)) {
+            newTags.set(tag.metatag, new Map())
           }
-          if (newTags[tag.metatag][tag.name] === undefined) {
-            newTags[tag.metatag][tag.name] = false
+          const metatagMap = newTags.get(tag.metatag)
+          if (!metatagMap.has(tag.name)) {
+            metatagMap.set(tag.name, false)
           }
         }
       })
@@ -131,7 +154,8 @@ const Challenges = ({ classes }) => {
   // }, [toast])
 
   useEffect(() => {
-    localStorage.challPageState = JSON.stringify({ categories, showSolved, tags })
+    const newTags = serializeTags(tags)
+    localStorage.challPageState = JSON.stringify({ categories, showSolved, tags: newTags })
   }, [categories, showSolved, tags])
 
   const problemsToDisplay = useMemo(() => {
@@ -154,19 +178,11 @@ const Challenges = ({ classes }) => {
         }
       })
     }
-    for (const metatag in tags) {
-      let filterMetatag = false
-      for (const selected of Object.values(tags[metatag])) {
-        if (selected) {
-          filterMetatag = true
-          break
-        }
-      }
-      if (filterMetatag) {
-        const expectedTags = Object.keys(tags[metatag]).filter((tag) => tags[metatag][tag])
+    for (const [metatag, tag] of tags.entries()) {
+      if (Array.from(tag.values()).some(x => x)) {
+        const expectedTags = new Set(Array.from(tag.entries()).filter(([_tagName, selected]) => selected).map(([t, s]) => t))
         filtered = filtered.filter((problem) => {
-          const problemTags = problem.tags
-          return problemTags.some((tag) => tag.metatag === metatag && expectedTags.includes(tag.name))
+          return problem.tags.some((tag) => tag.metatag === metatag && expectedTags.has(tag.name))
         })
       }
     }
@@ -254,13 +270,13 @@ const Challenges = ({ classes }) => {
           <div class='frame__body'>
             <div class='frame__title title'>Tags</div>
             {
-              Object.keys(tags).sort((a, b) => a.localeCompare(b)).map((metatag) => {
+              Array.from(tags.keys()).sort((a, b) => a.localeCompare(b)).map((metatag) => {
                 return (<div><h5 class='frame__title title'>{metatag}</h5>
-                  {Object.entries(tags[metatag]).sort((a, b) => a[0].localeCompare(b[0])).map(([tag, checked]) => {
+                  {Array.from(tags.get(metatag).entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([tag, checked]) => {
                     return (
-                      <div key={tag} class='form-ext-control form-ext-checkbox'>
-                        <input id={`tag-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
-                        <label for={`tag-${tag}`} class='form-ext-label'>{tag}</label>
+                      <div key={`tag-${metatag}-${tag}`} class='form-ext-control form-ext-checkbox'>
+                        <input id={`tag-${metatag}-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
+                        <label for={`tag-${metatag}-${tag}`} class='form-ext-label'>{tag}</label>
                       </div>
                     )
                   })}
@@ -272,16 +288,18 @@ const Challenges = ({ classes }) => {
       </div>
       <div class='col-6'>
         {
-          problemsToDisplay.map(problem => {
-            return (
-              <Problem
-                key={problem.id}
-                problem={problem}
-                solved={solveIDs.includes(problem.id)}
-                setSolved={setSolved}
-              />
-            )
-          })
+          problemsToDisplay.length > 0
+            ? problemsToDisplay.map(problem => {
+              return (
+                <Problem
+                  key={problem.id}
+                  problem={problem}
+                  solved={solveIDs.includes(problem.id)}
+                  setSolved={setSolved}
+                />
+              )
+            })
+            : (<h1 class={classes.noneFound}>No challenges found</h1>)
         }
       </div>
 
@@ -303,5 +321,8 @@ export default withStyles({
     '& .title, & .frame__subtitle': {
       color: '#fff'
     }
+  },
+  noneFound: {
+    margin: '0.5em'
   }
 }, Challenges)
