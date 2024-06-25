@@ -18,22 +18,15 @@ const loadStates = {
 
 const serializeTags = (tags) => {
   if (tags === undefined) return
-  const tagObj = {}
-  Array.from(tags).forEach(([metatag, tag]) => {
-    tagObj[metatag] = {}
-    Array.from(tag).forEach(([tagName, isSelected]) => {
-      tagObj[metatag][tagName] = isSelected
-    })
-  })
-  return tagObj
+  return Array.from(tags).map(([k, v]) => [k, Array.from(v)])
 }
 
 const deserializeTags = (tags) => {
   if (tags === undefined) return
   const outerMap = new Map()
-  Object.entries(tags).forEach(([metatag, tag]) => {
-    outerMap.set(metatag, new Map(Object.entries(tag)))
-  })
+  for (const [metatag, tag] of tags) {
+    outerMap.set(metatag, new Map(tag))
+  }
   return outerMap
 }
 
@@ -274,9 +267,9 @@ const Challenges = ({ classes }) => {
                 return (<div><h5 class='frame__title title'>{metatag}</h5>
                   {Array.from(tags.get(metatag).entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([tag, checked]) => {
                     return (
-                      <div key={`tag-${metatag}-${tag}`} class='form-ext-control form-ext-checkbox'>
-                        <input id={`tag-${metatag}-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
-                        <label for={`tag-${metatag}-${tag}`} class='form-ext-label'>{tag}</label>
+                      <div key={`tag-${metatag.length}-${metatag}-${tag}`} class='form-ext-control form-ext-checkbox'>
+                        <input id={`tag-${metatag.length}-${metatag}-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
+                        <label for={`tag-${metatag.length}-${metatag}-${tag}`} class='form-ext-label'>{tag}</label>
                       </div>
                     )
                   })}
