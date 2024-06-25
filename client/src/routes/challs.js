@@ -16,10 +16,25 @@ const loadStates = {
   loaded: 2
 }
 
+const serializeTags = (tags) => {
+  if (tags === undefined) return
+  return Array.from(tags).map(([k, v]) => [k, Array.from(v)])
+}
+
+const deserializeTags = (tags) => {
+  if (tags === undefined) return
+  const outerMap = new Map()
+  for (const [metatag, tag] of tags) {
+    outerMap.set(metatag, new Map(tag))
+  }
+  return outerMap
+}
+
 const Challenges = ({ classes }) => {
   const challPageState = useMemo(() => JSON.parse(localStorage.getItem('challPageState') || '{}'), [])
   const [problems, setProblems] = useState(null)
   const [categories, setCategories] = useState(challPageState.categories || {})
+  const [tags, setTags] = useState(deserializeTags(challPageState.tags) || new Map())
   const [showSolved, setShowSolved] = useState(challPageState.showSolved || false)
   const [solveIDs, setSolveIDs] = useState([])
   const [loadState, setLoadState] = useState(loadStates.pending)
@@ -43,6 +58,14 @@ const Challenges = ({ classes }) => {
       ...categories,
       [e.target.dataset.category]: e.target.checked
     }))
+  }, [])
+
+  const handleTagsCheckedChange = useCallback(e => {
+    setTags(oldTags => {
+      const newTags = new Map(oldTags)
+      newTags.get(e.target.dataset.metatag).set(e.target.dataset.tag, e.target.checked)
+      return newTags
+    })
   }, [])
 
   useEffect(() => {
@@ -74,9 +97,22 @@ const Challenges = ({ classes }) => {
       }
 
       const newCategories = { ...categories }
+
       data.forEach(problem => {
         if (newCategories[problem.category] === undefined) {
           newCategories[problem.category] = false
+        }
+      })
+      const newTags = new Map(tags)
+      data.forEach(problem => {
+        for (const tag of problem.tags) {
+          if (!newTags.has(tag.metatag)) {
+            newTags.set(tag.metatag, new Map())
+          }
+          const metatagMap = newTags.get(tag.metatag)
+          if (!metatagMap.has(tag.name)) {
+            metatagMap.set(tag.name, false)
+          }
         }
       })
 
@@ -92,9 +128,11 @@ const Challenges = ({ classes }) => {
 
       setProblems(data)
       setCategories(newCategories)
+
+      setTags(newTags)
     }
     action()
-  }, [toast, categories, problems])
+  }, [toast, categories, tags, problems])
 
   // useEffect(() => {
   //   const action = async () => {
@@ -110,8 +148,9 @@ const Challenges = ({ classes }) => {
   // }, [toast])
 
   useEffect(() => {
-    localStorage.challPageState = JSON.stringify({ categories, showSolved })
-  }, [categories, showSolved])
+    const newTags = serializeTags(tags)
+    localStorage.challPageState = JSON.stringify({ categories, showSolved, tags: newTags })
+  }, [categories, showSolved, tags])
 
   const problemsToDisplay = useMemo(() => {
     if (problems === null) {
@@ -133,6 +172,14 @@ const Challenges = ({ classes }) => {
         }
       })
     }
+    for (const [metatag, tag] of tags.entries()) {
+      if (Array.from(tag.values()).some(x => x)) {
+        const expectedTags = new Set(Array.from(tag.entries()).filter(([_tagName, selected]) => selected).map(([t, s]) => t))
+        filtered = filtered.filter((problem) => {
+          return problem.tags.some((tag) => tag.metatag === metatag && expectedTags.has(tag.name))
+        })
+      }
+    }
 
     filtered.sort((a, b) => {
       if (a.points === b.points) {
@@ -148,7 +195,7 @@ const Challenges = ({ classes }) => {
     })
 
     return filtered
-  }, [problems, categories, showSolved, solveIDs])
+  }, [problems, categories, showSolved, solveIDs, tags])
 
   const { categoryCounts, solvedCount } = useMemo(() => {
     const categoryCounts = new Map()
@@ -213,19 +260,40 @@ const Challenges = ({ classes }) => {
             }
           </div>
         </div>
+        <div class={`frame ${classes.frame}`}>
+          <div class='frame__body'>
+            <div class='frame__title title'>Tags</div>
+            {
+              Array.from(tags.keys()).sort((a, b) => a.localeCompare(b)).map((metatag) => {
+                return (<div><h5 class='frame__title title'>{metatag}</h5>
+                  {Array.from(tags.get(metatag).entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([tag, checked]) => {
+                    return (
+                      <div key={`tag-${metatag.length}-${metatag}-${tag}`} class='form-ext-control form-ext-checkbox'>
+                        <input id={`tag-${metatag.length}-${metatag}-${tag}`} data-tag={tag} data-metatag={metatag} class='form-ext-input' type='checkbox' checked={checked} onChange={handleTagsCheckedChange} />
+                        <label for={`tag-${metatag.length}-${metatag}-${tag}`} class='form-ext-label'>{tag}</label>
+                      </div>
+                    )
+                  })}
+                </div>)
+              })
+            }
+          </div>
+        </div>
       </div>
       <div class='col-6'>
         {
-          problemsToDisplay.map(problem => {
-            return (
-              <Problem
-                key={problem.id}
-                problem={problem}
-                solved={solveIDs.includes(problem.id)}
-                setSolved={setSolved}
-              />
-            )
-          })
+          problemsToDisplay.length > 0
+            ? problemsToDisplay.map(problem => {
+              return (
+                <Problem
+                  key={problem.id}
+                  problem={problem}
+                  solved={solveIDs.includes(problem.id)}
+                  setSolved={setSolved}
+                />
+              )
+            })
+            : (<h1 class={classes.noneFound}>No challenges found</h1>)
         }
       </div>
 
@@ -247,5 +315,8 @@ export default withStyles({
     '& .title, & .frame__subtitle': {
       color: '#fff'
     }
+  },
+  noneFound: {
+    margin: '0.5em'
   }
 }, Challenges)

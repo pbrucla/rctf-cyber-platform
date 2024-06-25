@@ -6,6 +6,7 @@ const ChallengeDefaults: Challenge = {
   name: '',
   description: '',
   category: '',
+  tags: [],
   author: '',
   files: [],
   tiebreakEligible: true,

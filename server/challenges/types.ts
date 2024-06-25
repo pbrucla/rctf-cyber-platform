@@ -13,6 +13,7 @@ export interface CleanedChallenge {
   name: string;
   description: string;
   category: string;
+  tags: Tag[];
   author: string;
   files: File[];
   points: Points;
@@ -24,10 +25,16 @@ export interface Challenge {
   name: string;
   description: string;
   category: string;
+  tags: Tag[];
   author: string;
   files: File[];
   points: Points;
   flag: string;
   tiebreakEligible: boolean;
   sortWeight?: number;
+}
+
+export interface Tag {
+  name: string;
+  metatag: string;
 }

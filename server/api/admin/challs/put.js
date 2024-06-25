@@ -30,6 +30,20 @@ export default {
             category: {
               type: 'string'
             },
+            tags: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string'
+                  },
+                  group: {
+                    type: 'string'
+                  }
+                }
+              }
+            },
             description: {
               type: 'string'
             },
