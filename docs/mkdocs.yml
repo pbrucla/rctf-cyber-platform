@@ -1,7 +1,7 @@
 site_name: rCTF
 site_description: rCTF Documentation
-site_author: redpwn
-site_url: https://rctf.redpwn.net
+site_author: redpwn, modified by pbrucla
+site_url: https://docs.platform.acmcyber.com
 
 nav:
   - Home: index.md
@@ -34,7 +34,7 @@ nav:
     - Manual Installation: development/manual-installation.md
 
 repo_name: GitHub
-repo_url: https://github.com/redpwn/rctf
+repo_url: https://github.com/pbrucla/rctf-cyber-platform
 edit_uri: blob/master/docs/content/
 
 docs_dir: content
