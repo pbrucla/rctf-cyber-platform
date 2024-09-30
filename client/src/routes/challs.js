@@ -111,7 +111,7 @@ const Challenges = ({ classes }) => {
           }
           const metatagMap = newTags.get(tag.metatag)
           if (!metatagMap.has(tag.name)) {
-            metatagMap.set(tag.name, false)
+            metatagMap.set(tag.name, Boolean(tags.get(tag.metatag)?.get(tag.name)))
           }
         }
       })
