@@ -103,7 +103,7 @@ const Challenges = ({ classes }) => {
           newCategories[problem.category] = false
         }
       })
-      const newTags = new Map(tags)
+      const newTags = new Map()
       data.forEach(problem => {
         for (const tag of problem.tags) {
           if (!newTags.has(tag.metatag)) {
