@@ -161,8 +161,9 @@ const Challenges = ({ classes }) => {
       filtered = filtered.filter(problem => !solveIDs.includes(problem.id))
     }
     let filterCategories = false
-    Object.values(categories).forEach(displayCategory => {
-      if (displayCategory) filterCategories = true
+    Object.entries(categories).forEach(category => {
+      console.log(category)
+      if (category[1] && problems.some(problem => problem.category === category[0])) filterCategories = true
     })
     if (filterCategories) {
       Object.keys(categories).forEach(category => {
